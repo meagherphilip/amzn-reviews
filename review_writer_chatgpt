@@ -1,0 +1,40 @@
+import requests
+from bs4 import BeautifulSoup
+import openai
+import re
+
+# Set up OpenAI API key
+openai.api_key = "API key"
+
+# Scrape Amazon reviews
+url = 'https://www.amazon.com/dp/B08J5F3GJW'
+headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3'}
+response = requests.get(url, headers=headers)
+soup = BeautifulSoup(response.content, 'html.parser')
+reviews = soup.find_all('div', {'data-hook': 'review'})
+
+# Generate new reviews using ChatGPT
+for review in reviews:
+    body = review.find('span', {'data-hook': 'review-body'}).text.strip()
+    
+    # Clean up review text
+    body = re.sub(r'\n+', ' ', body)
+    body = re.sub(r'\s+', ' ', body)
+    
+    # Generate new review using ChatGPT
+    prompt = f"Write a new review for this product: {body}"
+    response = openai.Completion.create(
+        engine="text-davinci-002",
+        prompt=prompt,
+        max_tokens=1024,
+        n=1,
+        stop=None,
+        temperature=0.5,
+    )
+    new_review = response.choices[0].text.strip()
+    
+    # Print original and new reviews
+    print('Original review:', body)
+    print('New review:', new_review)
+    print('---')
+
